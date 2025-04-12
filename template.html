@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Docs: {{TITLE}}</title>
+    <style>
+        body { display: flex; font-family: sans-serif; margin: 0; height: 100vh; overflow: hidden; /* Prevent body scroll */ }
+        #sidebar {
+            width: 250px; /* Initial width */
+            min-width: 150px; /* Minimum width */
+            max-width: 50%; /* Maximum width */
+            height: 100vh;
+            overflow-y: auto;
+            padding: 20px;
+            box-sizing: border-box;
+            background-color: #f8f9fa; /* Optional: background color */
+            flex-shrink: 0; /* Prevent sidebar from shrinking */
+        }
+        #resizer {
+            width: 5px;
+            height: 100vh;
+            cursor: col-resize;
+            background-color: #ccc;
+            flex-shrink: 0; /* Prevent resizer from shrinking */
+        }
+        #content {
+            flex-grow: 1;
+            padding: 20px;
+            height: 100vh;
+            overflow-y: auto;
+            box-sizing: border-box;
+        }
+        pre { background-color: #f4f4f4; padding: 10px; border-radius: 5px; overflow-x: auto; }
+        code { font-family: monospace; }
+        a { text-decoration: none; color: #0366d6; }
+        a:hover { text-decoration: underline; }
+        #sidebar ul { list-style: none; padding-left: 15px; margin-top: 5px; margin-bottom: 15px; }
+        #sidebar li { margin-bottom: 8px; }
+        #sidebar > ul { padding-left: 0; } /* Remove padding for top-level */
+        #sidebar h2 { margin-top: 0; font-size: 1.2em; }
+        .content-breadcrumbs { padding-bottom: 15px; margin-bottom: 15px; border-bottom: 1px solid #eee; font-size: 0.9em; color: #555; }
+        .content-breadcrumbs a, .content-breadcrumbs span { margin-right: 5px; }
+        .content-breadcrumbs a { color: #0366d6; }
+        .content-breadcrumbs a:hover { text-decoration: underline; }
+        .content-breadcrumbs span:last-child { font-weight: bold; color: #333; }
+        /* Mermaid diagram styling */
+        .mermaid { text-align: center; margin-bottom: 20px; } /* Center diagrams */
+        .mermaid svg { max-width: 100%; height: auto; } /* Ensure SVGs are responsive */
+    </style>
+    <!-- Mermaid.js Script -->
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({}); // Initialize without starting automatically
+
+        // Wait for the DOM to be fully loaded before running Mermaid
+        document.addEventListener('DOMContentLoaded', () => {
+            const mermaidElements = document.querySelectorAll('.mermaid');
+            if (mermaidElements.length > 0) {
+                console.log(`Found ${mermaidElements.length} mermaid elements. Attempting explicit rendering...`);
+                try {
+                    // Explicitly tell mermaid to render the found nodes
+                    mermaid.run({ nodes: mermaidElements });
+                    console.log("Mermaid explicit rendering attempted after DOMContentLoaded.");
+                } catch (e) {
+                    console.error("Error running Mermaid explicitly after DOMContentLoaded:", e);
+                    // Log the content of the first problematic element for debugging
+                    if (mermaidElements[0]) {
+                         console.error("Content of first mermaid element:", mermaidElements[0].textContent);
+                    }
+                }
+            } else {
+                console.log("No elements with class 'mermaid' found on the page.");
+            }
+        });
+    </script>
+</head>
+<body>
+    <div style="display: flex; flex-grow: 1; height: 100vh;">
+        <div id="sidebar">
+            <h2>Navigation</h2>
+            {{SIDEBAR_HTML}}
+        </div>
+        <div id="resizer"></div>
+        <div id="content">
+            <div class="content-breadcrumbs">{{BREADCRUMB_HTML}}</div>
+            {{CONTENT_HTML}}
+        </div>
+    </div>
+    <script>
+        const sidebar = document.getElementById('sidebar');
+        const resizer = document.getElementById('resizer');
+        const content = document.getElementById('content');
+        let isResizing = false;
+
+        resizer.addEventListener('mousedown', (e) => {
+            isResizing = true;
+            // Add styles to prevent text selection during drag
+            document.body.style.userSelect = 'none';
+            document.body.style.pointerEvents = 'none'; // Prevent interaction with content during resize
+            sidebar.style.transition = 'none'; // Disable transition during drag for smoother resize
+            content.style.transition = 'none';
+
+            document.addEventListener('mousemove', handleMouseMove);
+            document.addEventListener('mouseup', handleMouseUp);
+        });
+
+        function handleMouseMove(e) {
+            if (!isResizing) return;
+
+            // Calculate new width based on mouse position
+            let newWidth = e.clientX;
+
+            // Apply constraints (min/max width from CSS)
+            const style = window.getComputedStyle(sidebar);
+            const minWidth = parseInt(style.minWidth, 10);
+            const maxWidthPercentage = parseInt(style.maxWidth, 10); // Get percentage
+            const bodyWidth = document.body.clientWidth;
+            const maxWidth = (bodyWidth * maxWidthPercentage) / 100; // Calculate max width in pixels
+
+            if (newWidth < minWidth) newWidth = minWidth;
+            if (newWidth > maxWidth) newWidth = maxWidth;
+
+            sidebar.style.width = `${newWidth}px`;
+        }
+
+        function handleMouseUp() {
+            if (isResizing) {
+                isResizing = false;
+                // Remove styles preventing text selection
+                document.body.style.userSelect = '';
+                document.body.style.pointerEvents = '';
+                sidebar.style.transition = ''; // Re-enable transitions
+                content.style.transition = '';
+
+                document.removeEventListener('mousemove', handleMouseMove);
+                document.removeEventListener('mouseup', handleMouseUp);
+            }
+        }
+
+        // Mermaid is now run from the module script in the <head>
+    </script>
+</body>
+</html>
